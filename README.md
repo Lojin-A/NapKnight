@@ -35,6 +35,7 @@ Because computer setups are different, please choose the installation path that 
    ```cmd
    .venv\Scripts\activate
 (You should now see (.venv) appear on the far left side of your typing line).
+
 5. **Install AI Tools:** Inside the active terminal, type:
   ```cmd
    pip install opencv-python numpy
