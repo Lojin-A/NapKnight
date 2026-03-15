@@ -19,7 +19,8 @@ Because computer setups are different, please choose the installation path that 
    ```cmd
    pip install opencv-python numpy
 5. **Run the App:** Once the download finishes, type:
-  `python NapKnight.py`
+   ```cmd
+   python NapKnight.py
 ---
 
 ### PATH B: "The Safe Way" (If you ALREADY have Python 3.13 or 3.14 installed)
@@ -28,11 +29,22 @@ Because computer setups are different, please choose the installation path that 
 2. **Open the Correct Terminal:** Go to the top menu and click **Terminal -> New Terminal**. 
    * *CRITICAL:* Make sure you are using **Command Prompt**. Beside the little `+` Click the dropdown arrow at the top right of the terminal box and select **Command Prompt**. Do NOT use PowerShell.
 3. **Create the Safe Box:** Type this and hit Enter:
-  `python -m venv .venv`
+   ```cmd
+   python -m venv .venv
 4. **Turn the Box On:** Type this and hit Enter:
-  `.venv\Scripts\activate`
+   ```cmd
+   .venv\Scripts\activate
 (You should now see (.venv) appear on the far left side of your typing line).
 5. **Install AI Tools:** Inside the active terminal, type:
-  `pip install opencv-python numpy`
+  ```cmd
+  pip install opencv-python numpy
+```
 6. **Run the App:** Type:
-  `python NapKnight.py`
+```cmd
+  python NapKnight.py
+
+
+
+
+
+
