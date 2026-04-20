@@ -1,10 +1,10 @@
 import cv2
 import tkinter as tk
 import threading
-import winsound
+import pygame  
 
 FRAME_LIMIT = 15     
-NO_FACE_LIMIT = 100   
+NO_FACE_LIMIT = 150   # <--- THE GOLDILOCKS ZONE: ~5 seconds before the alarm triggers!
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
@@ -18,7 +18,7 @@ class NapKnightApp:
 
         tk.Label(root, text="NapKnight AI", font=("Arial", 28, "bold"), bg="#222", fg="white").pack(pady=20)
         
-        instr = "CONTROLS:\n'D' = DRIVE MODE\n'P' = PARK MODE\n'Q' = QUIT"
+        instr = "CONTROLS:\n'D' = DRIVE MODE\n'P' = PARK MODE\n'Q' = QUIT\n(Make sure video window is clicked!)"
         tk.Label(root, text=instr, font=("Consolas", 12), bg="#333", fg="#ccc", padx=10, pady=10).pack(pady=10)
 
         self.btn_start = tk.Button(root, text="LAUNCH SYSTEM", font=("Arial", 14, "bold"), 
@@ -27,28 +27,21 @@ class NapKnightApp:
 
         self.running = False
         self.driving_mode = False 
-        self.is_beeping = False
-
-    def beep(self):
-        if self.is_beeping:
-            return
-            
-        def play_sound():
-            self.is_beeping = True
-            try:
-                winsound.Beep(2500, 500) 
-            except:
-                pass
-            self.is_beeping = False
-
-        threading.Thread(target=play_sound).start()
+        self.is_playing = False 
+        
+        # Initialize Audio
+        pygame.mixer.init()
+        try:
+            self.alarm_sound = pygame.mixer.Sound("alarm.wav")
+        except:
+            print("ERROR: Could not find 'alarm.wav'.")
+            self.alarm_sound = None
 
     def start_system(self):
         if self.running: return
         self.running = True
         self.btn_start.config(state=tk.DISABLED, text="RUNNING...")
-        # We use a thread so the camera doesn't freeze the menu buttons!
-        threading.Thread(target=self.run_loop).start()
+        threading.Thread(target=self.run_loop, daemon=True).start()
 
     def run_loop(self):
         cap = cv2.VideoCapture(0)
@@ -60,8 +53,10 @@ class NapKnightApp:
             if not ret: break
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            key = cv2.waitKey(5) & 0xFF
+            trigger_alarm = False
             
+            # --- KEY CONTROLS ---
+            key = cv2.waitKey(5) & 0xFF
             if key == ord('q') or key == ord('Q'):
                 self.running = False
                 break
@@ -69,25 +64,27 @@ class NapKnightApp:
                 self.driving_mode = True
             elif key == ord('p') or key == ord('P'):
                 self.driving_mode = False
-                eye_counter = 0    
-                face_counter = 0
+                if self.is_playing and self.alarm_sound:
+                    self.alarm_sound.stop()
+                    self.is_playing = False
 
             cv2.rectangle(frame, (0,0), (frame.shape[1], 80), (0,0,0), -1)
 
+            # --- MODE LOGIC ---
             if not self.driving_mode:
                 cv2.putText(frame, "MODE: PARKED", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
                 eye_counter = 0
                 face_counter = 0
             else:
                 cv2.putText(frame, "MODE: DRIVING", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
                 faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
                 if len(faces) == 0:
                     face_counter += 1
+                    eye_counter = 0 
                     cv2.putText(frame, "CRITICAL: HEAD DROP / NO DRIVER", (20, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
-                    if face_counter > NO_FACE_LIMIT:
-                        self.beep()
+                    if face_counter > NO_FACE_LIMIT: 
+                        trigger_alarm = True 
                 else:
                     face_counter = 0
                     (x, y, w, h) = faces[0]
@@ -99,20 +96,32 @@ class NapKnightApp:
                     if len(eyes) == 0:
                         eye_counter += 1
                         cv2.putText(frame, "ALERT: EYES CLOSED / DISTRACTED", (20, 300), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 165, 255), 2)
+                        if eye_counter > FRAME_LIMIT: 
+                            trigger_alarm = True 
                     else:
                         eye_counter = 0
                         cv2.putText(frame, "STATUS: AWAKE", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                         for (ex, ey, ew, eh) in eyes:
                             cv2.rectangle(frame, (x+ex, y+ey), (x+ex+ew, y+ey+eh), (0, 255, 0), 2)
 
-                    if eye_counter > FRAME_LIMIT:
-                        self.beep()
+            # --- AUDIO LOGIC ---
+            if self.alarm_sound:
+                if trigger_alarm and not self.is_playing:
+                    self.alarm_sound.play(loops=-1)
+                    self.is_playing = True
+                elif not trigger_alarm and self.is_playing:
+                    self.alarm_sound.stop()
+                    self.is_playing = False
 
             cv2.imshow('NapKnight Dashboard', frame)
 
+        # Clean up
         cap.release()
         cv2.destroyAllWindows()
+        if self.alarm_sound: self.alarm_sound.stop()
+        self.is_playing = False
         self.btn_start.config(state=tk.NORMAL, text="LAUNCH SYSTEM")
+        self.driving_mode = False
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -44,4 +44,8 @@ Because computer setups are different, please choose the installation path that 
 ```cmd
    python NapKnight.py
 
+   !!. **install this new AI tool before you run the new code!:** Type:
+```cmd
+   python -m pip install pygame
+
 
