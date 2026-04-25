@@ -4,7 +4,7 @@ import threading
 import pygame  
 
 FRAME_LIMIT = 15     
-NO_FACE_LIMIT = 150   # <--- THE GOLDILOCKS ZONE: ~5 seconds before the alarm triggers!
+NO_FACE_LIMIT = 150   
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
@@ -55,7 +55,6 @@ class NapKnightApp:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             trigger_alarm = False
             
-            # --- KEY CONTROLS ---
             key = cv2.waitKey(5) & 0xFF
             if key == ord('q') or key == ord('Q'):
                 self.running = False
@@ -70,7 +69,6 @@ class NapKnightApp:
 
             cv2.rectangle(frame, (0,0), (frame.shape[1], 80), (0,0,0), -1)
 
-            # --- MODE LOGIC ---
             if not self.driving_mode:
                 cv2.putText(frame, "MODE: PARKED", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
                 eye_counter = 0
@@ -104,7 +102,6 @@ class NapKnightApp:
                         for (ex, ey, ew, eh) in eyes:
                             cv2.rectangle(frame, (x+ex, y+ey), (x+ex+ew, y+ey+eh), (0, 255, 0), 2)
 
-            # --- AUDIO LOGIC ---
             if self.alarm_sound:
                 if trigger_alarm and not self.is_playing:
                     self.alarm_sound.play(loops=-1)
@@ -115,7 +112,6 @@ class NapKnightApp:
 
             cv2.imshow('NapKnight Dashboard', frame)
 
-        # Clean up
         cap.release()
         cv2.destroyAllWindows()
         if self.alarm_sound: self.alarm_sound.stop()
